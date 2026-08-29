@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Railway Checkout — Session Expiry Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { ink: '#111827', rail: '#2563eb' },
+            boxShadow: { soft: '0 18px 45px -25px rgba(15, 23, 42, .32)' }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="min-h-screen bg-slate-50 font-sans text-slate-800">
+    <main id="checkout-view" class="mx-auto max-w-6xl px-4 py-8 transition-all duration-500 ease-out sm:px-6 lg:py-14">
+      <header class="mb-8 flex items-center justify-between">
+        <a href="#" class="flex items-center gap-3 font-semibold text-ink">
+          <span class="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-xl text-white">↔</span>
+          Railio
+        </a>
+        <div class="flex items-center gap-3 text-sm font-medium text-slate-500">
+          <span id="session-countdown" class="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
+            Session expires in 00:25
+          </span>
+          <div class="hidden items-center gap-2 sm:flex">
+            <span class="h-2 w-2 rounded-full bg-amber-500"></span> Unstable session
+          </div>
+        </div>
+      </header>
+
+      <div id="expired-banner" class="mb-6 hidden rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800 shadow-sm" role="alert">
+        <strong class="block">Your session has expired.</strong>
+        Your booking could not be completed. Please sign in again and re-enter your journey details.
+      </div>
+
+      <div class="grid gap-7 lg:grid-cols-[1.35fr_.85fr]">
+        <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft">
+          <div class="border-b border-slate-100 px-6 py-6 sm:px-8">
+            <p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Complete your booking</p>
+            <h1 class="mt-2 text-2xl font-bold tracking-tight text-ink sm:text-3xl">Passenger details</h1>
+            <p class="mt-2 text-sm text-slate-500">Enter details exactly as they appear on your government ID.</p>
+          </div>
+
+          <form id="booking-form" class="px-6 py-7 sm:px-8" novalidate>
+            <div class="grid gap-5 sm:grid-cols-2">
+              <label class="block sm:col-span-2">
+                <span class="mb-2 block text-sm font-semibold text-slate-700">Full name</span>
+                <input data-field="fullName" required type="text" placeholder="e.g. Aarav Sharma" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-slate-700">Age</span>
+                <input data-field="age" required type="number" min="1" max="120" placeholder="28" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-slate-700">Gender</span>
+                <select data-field="gender" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+                  <option value="">Select gender</option><option>Female</option><option>Male</option><option>Non-binary</option><option>Prefer not to say</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-slate-700">Email address</span>
+                <input data-field="email" required type="email" placeholder="you@example.com" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-slate-700">Mobile number</span>
+                <input data-field="phone" required type="tel" placeholder="+91 98765 43210" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
+              </label>
+            </div>
+
+            <label class="mt-6 flex cursor-pointer items-start gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+              <input data-field="insurance" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span><strong class="block text-slate-700">Add travel protection</strong>Get coverage for unexpected changes for ₹49.</span>
+            </label>
+
+            <button id="booking-button" type="submit" class="mt-7 flex w-full items-center justify-center gap-3 rounded-xl bg-blue-600 px-5 py-4 text-base font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none">
+              <span>Pay &amp; Book</span><span id="button-total" class="border-l border-blue-400 pl-3">₹3,286</span>
+            </button>
+            <p id="form-message" class="mt-4 hidden text-center text-sm font-medium" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <aside class="space-y-5">
+          <section class="rounded-3xl bg-ink p-6 text-white shadow-soft sm:p-7">
+            <div class="flex items-start justify-between gap-4">
+              <div><p class="text-sm font-medium text-blue-300">New Delhi → Mumbai Central</p><h2 class="mt-1 text-xl font-bold">12952 Rajdhani Express</h2></div>
+              <span class="rounded-lg bg-white/10 px-2.5 py-1 text-xs font-semibold">1A</span>
+            </div>
+            <div class="mt-7 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <div><p class="text-2xl font-bold">16:55</p><p class="mt-1 text-xs text-slate-400">NDLS · Tue, 14 Oct</p></div>
+              <div class="relative w-16 border-t border-dashed border-slate-500"><span class="absolute -top-1.5 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 border-blue-300 bg-ink"></span></div>
+              <div class="text-right"><p class="text-2xl font-bold">08:35</p><p class="mt-1 text-xs text-slate-400">MMCT · Wed, 15 Oct</p></div>
+            </div>
+            <p class="mt-6 border-t border-white/10 pt-5 text-sm text-slate-300">15h 40m · First AC · One passenger</p>
+          </section>
+
+          <section class="rounded-3xl border border-emerald-100 bg-emerald-50 p-5">
+            <div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-full bg-emerald-500 text-lg text-white">✓</span><div><p class="text-sm font-semibold text-emerald-900">Live availability</p><p class="text-xs text-emerald-700">Updated just now</p></div></div>
+            <p class="mt-4 text-2xl font-bold text-emerald-800"><span id="seat-count">12</span> Seats Available</p>
+            <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-emerald-200"><div id="seat-bar" class="h-full w-3/5 rounded-full bg-emerald-500 transition-all duration-500"></div></div>
+          </section>
+
+          <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
+            <p class="text-sm font-bold text-ink">Fare summary</p>
+            <div class="mt-5 space-y-3 text-sm"><div class="flex justify-between text-slate-500"><span>Base fare</span><span>₹3,100</span></div><div class="flex justify-between text-slate-500"><span>Service fee</span><span>₹137</span></div><div class="flex justify-between text-slate-500"><span>Travel protection</span><span id="insurance-cost">₹0</span></div><div class="flex justify-between border-t border-slate-100 pt-4 text-base font-bold text-ink"><span>Total</span><span id="total-fare">₹3,286</span></div></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <section id="logout-modal" class="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 px-4 opacity-0 backdrop-blur-sm transition-all duration-300" aria-hidden="true">
+      <div class="w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl sm:p-9">
+        <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-red-100 text-2xl text-red-600">!</div>
+        <p class="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-red-600">Booking interrupted</p>
+        <h2 class="mt-2 text-2xl font-bold tracking-tight text-ink">You have been logged out.</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-500">Your session expired while the booking request was being processed. Your form can no longer be submitted.</p>
+        <button disabled class="mt-7 w-full rounded-xl bg-slate-200 px-5 py-3 text-sm font-bold text-slate-500">Sign in again to continue</button>
+      </div>
+    </section>
+
+    <section id="confirmation-view" class="pointer-events-none fixed inset-0 z-30 flex translate-y-8 items-center justify-center bg-slate-950/35 px-4 opacity-0 backdrop-blur-sm transition-all duration-500 ease-out" aria-live="polite" aria-hidden="true">
+      <article class="w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div class="bg-gradient-to-r from-blue-700 to-blue-500 px-7 py-8 text-white sm:px-10">
+          <div class="flex items-start justify-between gap-4"><div><p class="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">Booking successful</p><h2 class="mt-2 text-3xl font-bold">Your journey is confirmed.</h2></div><span class="grid h-12 w-12 place-items-center rounded-full bg-white/20 text-2xl">✓</span></div>
+        </div>
+      </article>
+    </section>
+
+    <script>
+      const STORAGE_KEY = 'railio-rajdhani-checkout';
+      const bookingState = {
+        train: '12952 Rajdhani Express',
+        seatsAvailable: 12,
+        passenger: { fullName: '', age: '', gender: '', email: '', phone: '', insurance: false },
+        fare: { base: 3100, service: 137, insurance: 49 }
+      };
+
+      let sessionExpired = false;
+      let secondsLeft = Math.floor(Math.random() * 16) + 15;
+
+      const formatINR = (amount) => `₹${amount.toLocaleString('en-IN')}`;
+      const updateFare = () => {
+        const total = bookingState.fare.base + bookingState.fare.service + (bookingState.passenger.insurance ? bookingState.fare.insurance : 0);
+        document.querySelector('#insurance-cost').textContent = bookingState.passenger.insurance ? formatINR(49) : '₹0';
+        document.querySelector('#total-fare').textContent = formatINR(total);
+        document.querySelector('#button-total').textContent = formatINR(total);
+      };
+
+      const fields = document.querySelectorAll('[data-field]');
+      fields.forEach((field) => {
+        field.addEventListener('input', (event) => {
+          bookingState.passenger[event.target.dataset.field] = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+          updateFare();
+        });
+      });
+
+      const expireSession = () => {
+        if (sessionExpired) return;
+        sessionExpired = true;
+        clearInterval(sessionTimer);
+        document.querySelector('#expired-banner').classList.remove('hidden');
+        document.querySelector('#booking-button').disabled = true;
+        fields.forEach((field) => field.disabled = true);
+
+        const modal = document.querySelector('#logout-modal');
+        modal.classList.remove('pointer-events-none', 'opacity-0');
+        modal.setAttribute('aria-hidden', 'false');
+      };
+
+      const sessionTimer = setInterval(() => {
+        secondsLeft -= 1;
+        const minutes = String(Math.floor(Math.max(secondsLeft, 0) / 60)).padStart(2, '0');
+        const seconds = String(Math.max(secondsLeft, 0) % 60).padStart(2, '0');
+        document.querySelector('#session-countdown').textContent = `Session expires in ${minutes}:${seconds}`;
+
+        if (secondsLeft <= 0) expireSession();
+      }, 1000);
+
+      document.querySelector('#booking-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (sessionExpired) return;
+
+        const form = event.currentTarget;
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+
+        // Simulated race condition: booking can fail at the exact moment of payment.
+        setTimeout(() => {
+          if (Math.random() > 0.45) expireSession();
+        }, Math.floor(Math.random() * 1200) + 250);
+      });
+
+      updateFare();
+    </script>
+  </body>
+</html>
