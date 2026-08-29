@@ -141,6 +141,7 @@
 
       let sessionExpired = false;
       let secondsLeft = Math.floor(Math.random() * 16) + 15;
+      let userState = 'Searching';
 
       const formatINR = (amount) => `₹${amount.toLocaleString('en-IN')}`;
       const updateFare = () => {
@@ -153,6 +154,7 @@
       const fields = document.querySelectorAll('[data-field]');
       fields.forEach((field) => {
         field.addEventListener('input', (event) => {
+          userState = 'DetailsEntered';
           bookingState.passenger[event.target.dataset.field] = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
           updateFare();
         });
@@ -190,9 +192,10 @@
           return;
         }
 
-        // Simulated race condition: booking can fail at the exact moment of payment.
+        userState = 'Reviewing';
+        // Simulated forced logout while the user is reviewing the booking.
         setTimeout(() => {
-          if (Math.random() > 0.45) expireSession();
+          if (userState === 'Reviewing' && Math.random() > 0.45) expireSession();
         }, Math.floor(Math.random() * 1200) + 250);
       });
 
