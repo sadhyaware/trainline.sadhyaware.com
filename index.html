@@ -283,6 +283,13 @@
         setTimeout(() => { userState = 'Confirmed'; showConfirmation(); }, 350);
       });
 
+      document.querySelector('#confirmation-view').addEventListener('click', (event) => {
+        if (event.target !== event.currentTarget) return;
+        const confirmation = event.currentTarget;
+        confirmation.classList.add('pointer-events-none', 'translate-y-8', 'opacity-0');
+        confirmation.setAttribute('aria-hidden', 'true');
+      });
+
       setInterval(() => {
         saveProgress();
         showRefreshToast();
