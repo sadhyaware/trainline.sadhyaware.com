@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IR Trainline Glossary & Formal Spec</title>
+<link rel="stylesheet" href="./styles.css">
+
+<!-- Mermaid support -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true });</script>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f7f7f7;
+    }
+    #topMenu {
+        display: flex;
+        align-items: center;
+        background: #003366;
+        padding: 10px;
+        color: white;
+    }
+    #brandLogo {
+        height: 40px;
+        margin-right: 20px;
+    }
+    #trainIcon {
+        height: 40px;
+        margin-left: auto;
+        margin-right: 20px;
+    }
+    #menuLink {
+        color: white;
+        margin-right: 20px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .section {
+        padding: 20px;
+        background: white;
+        margin: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+        margin-top: 0;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- Top Menu -->
+<div id="topMenu">
+    <a href="https://ai.sadhyaware.com">
+        <img src="./images/SadhyawareTechnologiesTransparent.png" id="brandLogo" alt="Sadhyaware Logo">
+    </a>
+
+    <a href="index.html" id="menuLink">Home</a>
+    <a href="flowDiagram.html" id="menuLink">Flow Diagram</a>
+
+    <img src="./images/customIRCTC-Train.png" id="trainIcon" alt="Train Icon">
+</div>
+
+<!-- Glossary Section -->
+<div class="section">
+    <h2>IR Trainline Glossary</h2>
+    <p>This glossary explains the domain concepts used in the IRCTC booking flow and the formal model.</p>
+
+    <ul>
+        <li><strong>Search:</strong> User browses trains, dates, classes, quotas.</li>
+        <li><strong>Select:</strong> User chooses a specific train and class.</li>
+        <li><strong>DetailsEntered:</strong> Passenger names, ages, etc.</li>
+        <li><strong>Reviewing:</strong> User sees fare summary and journey details.</li>
+        <li><strong>On-Hold:</strong> Temporary seat lock before payment; 5-minute grace timer.</li>
+        <li><strong>Paying:</strong> User is at external payment gateway (mocked).</li>
+        <li><strong>Confirmed:</strong> Booking finalized (Railways calls this “Reservation”).</li>
+        <li><strong>Expired:</strong> On-Hold timed out or payment failed; seat released.</li>
+    </ul>
+</div>
+
+
+<!-- Mermaid Diagram -->
+<div class="section">
+    <h2>State Diagram</h2>
+    <div class="mermaid">
+        stateDiagram-v2
+            [*] --> Idle
+            Idle --> Searching
+            Searching --> Selected
+            Selected --> DetailsEntered
+            DetailsEntered --> Reviewing
+
+            Reviewing --> OnHold: seatsAvailable > 0
+            Reviewing --> Expired: seatsAvailable = 0
+
+            OnHold --> Paying: user decides to pay
+            OnHold --> Expired: holdTimer = 0
+
+            Paying --> Confirmed: holdActive = TRUE
+            Paying --> Expired: holdActive = FALSE
+
+            Confirmed --> [*]
+            Expired --> [*]
+    </div>
+</div>
+
+</body>
+</html>
