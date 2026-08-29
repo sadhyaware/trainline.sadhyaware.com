@@ -15,24 +15,21 @@
       <h1>IRCTC Improved Booking Flow</h1>
 
       <pre class="mermaid">
-stateDiagram-v2
-    [*] --> Idle
-    Idle --> Searching
-    Searching --> Selected
-    Selected --> DetailsEntered
-    DetailsEntered --> Reviewing
-
-    Reviewing --> OnHold: seatsAvailable > 0
-    Reviewing --> Expired: seatsAvailable = 0
-
-    OnHold --> Paying: user decides to pay
-    OnHold --> Expired: holdTimer = 0
-
-    Paying --> Confirmed: holdActive = TRUE
-    Paying --> Expired: holdActive = FALSE
-
-    Confirmed --> [*]
-    Expired --> [*]
+flowchart TD
+    Client[Booking client] --> Edge[JWT at edge]
+    Edge --> Ingress[Regulated token ingress]
+    Ingress --> App[Stateless application servers]
+    App --> TTL[Sliding TTL Window]
+    TTL --> Redis[Redis + Lua atomic TTL extension]
+    Redis --> Review[Reviewing]
+    Review -->|Seat available| OnHold[On-Hold: temporary seat lock]
+    Review -->|No seat available| Expired[Expired]
+    OnHold -->|Proceed to payment| Paying[Paying]
+    OnHold -->|holdTimer elapsed| Expired
+    Paying -->|holdActive| Confirmed[Confirmed]
+    Paying -->|hold inactive| Expired
+    Confirmed --> Terminal((Terminal))
+    Expired --> Terminal
       </pre>
     </main>
   </body>

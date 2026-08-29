@@ -72,12 +72,19 @@
 
     <ul>
         <li><strong>Search:</strong> User browses trains, dates, classes, quotas.</li>
+        <li><strong>Idle:</strong> Initial state before a search begins.</li>
         <li><strong>Select:</strong> User chooses a specific train and class.</li>
         <li><strong>DetailsEntered:</strong> Passenger names, ages, etc.</li>
         <li><strong>Reviewing:</strong> User sees fare summary and journey details.</li>
         <li><strong>On-Hold:</strong> Temporary seat lock before payment; 5-minute grace timer.</li>
+        <li><strong>Stateless application servers:</strong> Application instances keep no booking-session state locally, so requests can safely move between servers.</li>
+        <li><strong>JWT at edge:</strong> The edge validates the signed JSON Web Token before allowing a request into the booking platform.</li>
+        <li><strong>ttl (Sliding TTL Window):</strong> A 300-second session window refreshed on each user action.</li>
+        <li><strong>Regulated token ingress:</strong> The controlled entry point that accepts only edge-validated tokens and applies platform access rules.</li>
+        <li><strong>Redis + Lua atomic TTL extension:</strong> Redis stores transient booking state while a Lua script updates the state and extends its TTL as one atomic operation.</li>
+        <li><strong>holdTimer (On-Hold grace timer):</strong> The 300-second countdown that protects the temporary seat lock before payment.</li>
         <li><strong>Paying:</strong> User is at external payment gateway (mocked).</li>
-        <li><strong>Confirmed:</strong> Booking finalized (Railways calls this “Reservation”).</li>
+        <li><strong>Confirmed:</strong> Booking finalized after successful payment handling.</li>
         <li><strong>Expired:</strong> On-Hold timed out or payment failed; seat released.</li>
     </ul>
 </div>
@@ -85,7 +92,7 @@
 
 <!-- Mermaid Diagram -->
 <div class="section">
-    <h2>State Diagram</h2>
+    <h2>Current State Diagram</h2>
     <div class="mermaid">
         stateDiagram-v2
             [*] --> Idle
@@ -105,6 +112,28 @@
 
             Confirmed --> [*]
             Expired --> [*]
+    </div>
+</div>
+
+<!-- Mermaid Diagram -->
+<div class="section">
+    <h2>Future State Diagram</h2>
+    <div class="mermaid">
+        flowchart TD
+    Client[Booking client] --> Edge[JWT at edge]
+    Edge --> Ingress[Regulated token ingress]
+    Ingress --> App[Stateless application servers]
+    App --> TTL[Sliding TTL Window]
+    TTL --> Redis[Redis + Lua atomic TTL extension]
+    Redis --> Review[Reviewing]
+    Review -->|Seat available| OnHold[On-Hold: temporary seat lock]
+    Review -->|No seat available| Expired[Expired]
+    OnHold -->|Proceed to payment| Paying[Paying]
+    OnHold -->|holdTimer elapsed| Expired
+    Paying -->|holdActive| Confirmed[Confirmed]
+    Paying -->|hold inactive| Expired
+    Confirmed --> Terminal((Terminal))
+    Expired --> Terminal
     </div>
 </div>
 
